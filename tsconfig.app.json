@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "types": [],
+    "target": "ES2022",
+    "useDefineForClassFields": false
+  },
+  "files": ["main.ts", "main.server.ts"],
+  "include": [
+    "**/*.d.ts",
+    "**/*.ts",
+    "pages/**/*.page.ts",
+    "server/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}

@@ -5,7 +5,7 @@
  */
 export default function handler(request, response) {
   response.status(200).json({
-    message: 'Hello from Launch Cloud Function',
+    message: 'Hello0 from Launch Cloud Function',
     method: request.method,
     query: request.query,
     body: request.body,

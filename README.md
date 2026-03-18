@@ -83,6 +83,57 @@ Use this if you only need prerendered pages and no server/API at runtime.
 - Replace `https://your-launch-url.contentstack.com` in `vite.config.ts` (inside `prerender.sitemap.host`) with your real Launch URL, then rebuild and redeploy.
 - For SSR, you can use [Launch’s cache revalidation](https://www.contentstack.com/docs/developers/launch/revalidate-cdn-cache) to refresh content.
 
+---
+
+## Launch: Cloud Functions, Rewrites & Redirects
+
+The repo is set up to use **Launch Cloud Functions**, **Edge URL Rewrites**, and **Edge URL Redirects** via `launch.json` and the `/functions` folder.
+
+### Cloud Functions (`/functions`)
+
+- **Path:** JavaScript files in `/functions`; the path relative to `/functions` becomes the URL path.
+- **Example:** `functions/hello.js` → `/hello`, `functions/user/[name].js` → `/user/:name`.
+- **Handler:** Each function file must export: `export default function handler(request, response)`.
+- **Docs:** [Cloud Functions](https://www.contentstack.com/docs/developers/launch/cloud-functions).
+
+**Important:** When you deploy with a **Server Command** (SSR), Launch **disables Cloud Functions** for that project. So with the current SSR setup, `/hello` and `/user/:name` will not run as Cloud Functions; they are in the repo for when you use a static-only deploy or a separate functions-only project. For API logic with SSR, use the app’s API routes under `server/routes/api/` instead.
+
+To run functions locally: `npx @contentstack/cli-launch launch:functions` (see [CLI for Launch](https://www.contentstack.com/docs/developers/cli/cli-for-launch)).
+
+### Edge Function (`[proxy].edge.js`)
+
+- **File:** `functions/[proxy].edge.js` (exact name required).
+- Runs at the edge before each request; can log, modify, or proxy the request.
+- This repo’s handler logs `method`, `pathname`, `url`, `clientIp`, and `timestamp`, then proxies to the origin with `return fetch(request)`.
+- **View logs:** Launch dashboard → your project → **Server Logs** (console output appears there; retained 24 hours, max 5000 entries).
+- **Docs:** [Edge Functions](https://www.contentstack.com/docs/developers/launch/edge-functions). Note: `launch.json` rewrites/redirects take precedence over the Edge Function.
+
+### Edge URL Rewrites (`launch.json` → `rewrites`)
+
+Rewrites serve content from a different URL without changing the address in the browser.
+
+| Source | Destination | Purpose |
+|--------|-------------|--------|
+| `/api/:path(.*)` | `/api/:path` | Send `/api/*` to your Node app (so API routes work when CDN would otherwise 404). |
+| `/products` | `/` | SPA fallback: serve app shell so Angular Router can show `/products`. |
+| `/products/:id` | `/` | SPA fallback for dynamic product URLs. |
+
+[Edge URL Rewrites](https://www.contentstack.com/docs/developers/launch/edge-url-rewrites)
+
+### Edge URL Redirects (`launch.json` → `redirects`)
+
+Redirects send the user to a new URL (browser address changes).
+
+| Source | Destination | Status | Purpose |
+|--------|-------------|--------|--------|
+| `/old-demo` | `/demo-api` | 308 | Permanent redirect from old path to API demo page. |
+| `/home` | `/` | 301 | Redirect `/home` to homepage. |
+
+- **301** – permanent redirect; **302/307** – temporary; **308** – permanent (preserves method).
+- [Edge URL Redirects](https://www.contentstack.com/docs/developers/launch/edge-url-redirects)
+
+Commit and push `launch.json` and `/functions`; after the next deploy, Launch will apply rewrites and redirects. Cloud Functions will only be active if the project is deployed **without** a Server Command.
+
 ## Routing
 
 This app uses **page routing only**: all routes are defined in `app.routes.ts` with an explicit `Routes` array and lazy-loaded via `loadComponent`. Page components live under `pages/`. There is no `src` folder.
@@ -103,7 +154,9 @@ No `src` folder. App and pages live at project root:
   public/            # Static assets
   server/
     routes/
-      api/           # API routes (/api/*)
+      api/           # Analog/Nitro API routes (/api/*)
+  functions/         # Launch Cloud Functions + [proxy].edge.js (Edge Function)
+  launch.json        # Launch Edge rewrites & redirects
 ```
 
 ## Scripts

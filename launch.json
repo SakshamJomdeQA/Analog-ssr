@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path(.*)",
+      "destination": "/api/:path"
+    },
+    {
+      "source": "/products",
+      "destination": "/"
+    },
+    {
+      "source": "/products/:id",
+      "destination": "/"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/old-demo",
+      "destination": "/demo-api",
+      "statusCode": 308
+    },
+    {
+      "source": "/home",
+      "destination": "/",
+      "statusCode": 301
+    }
+  ]
+}
